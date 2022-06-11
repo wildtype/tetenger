@@ -6,19 +6,24 @@
 </head>
 <body>
   <div class="imagetagger">
-    <div class="imagetagger__image-container">
-
-    </div>
     <div class="imagetagger__navigation">
       <a class="imagetagger__nav-button" href="#prev">&#8592;</a>
-      <a class="imagetagger__nav-button" href="#tag"> tag </a>
+      <label for="tag"> tag </label>
       <a class="imagetagger__nav-button" href="#prev">&#8594;</a>
     </div>
+    <div class="imagetagger__tagging">
+      <input type="text" id="tag" name="tag" class="imagetagger__tag-input" />
+
+      <div class="imagetagger__tag-container">
+      </div>
+    </div>
+    <div class="imagetagger__image-container"></div>
   </div>
 </body>
 <style>
   .imagetagger {
     text-align: center;
+    font-size: 24px;
   }
 
   img.imagetagger__image{
@@ -28,13 +33,39 @@
   }
 
   .imagetagger__navigation {
-    padding-top: 1em;
-    font-size: 24px;
+    padding: 2em;
+;
   }
 
   .imagetagger__nav-button {
     color: #000;
     text-decoration: none;
+  }
+
+  .imagetagger__tag-input {
+    width: 80%;
+    font-size: 18;
+    border: none;
+    border-bottom: 2px solid #eee;
+    text-align: center;
+  }
+
+  .imagetagger__tag-container {
+    padding-top: 2em;
+    padding-bottom: 2em;
+    font-size: 18px;
+  }
+
+  .imagetagger__tag-list {
+    display: none;
+  }
+
+  .imagetagger__tag-list--shown {
+    display: block;
+  }
+
+  .imagetagger__tag-item {
+    margin-right: 2em;
   }
 </style>
 <script src="image_list.js"></script>
@@ -42,28 +73,102 @@
   let imageContainer = document.querySelector('div.imagetagger__image-container');
   let imageElement = document.createElement('img');
   let imageIndex = 0;
+  let tagInput = document.querySelector('input#tag');
+  let tagContainer = document.querySelector('div.imagetagger__tag-container');
 
   imageElement.src = window.images[imageIndex];
   imageElement.className = 'imagetagger__image';
   imageContainer.appendChild(imageElement);
 
-  document.body.addEventListener('keydown', (event) => {
-    if (event.key == "ArrowRight") {
-      if (imageIndex >= window.images.length - 1) {
-        imageIndex = 0;
-      } else {
-        imageIndex +=1;
-      }
-    } else if (event.key == "ArrowLeft") {
-      if (imageIndex <= 0) {
-        imageIndex = window.images.length - 1;
-      } else {
-        imageIndex -=1;
-      }
+  function hideAllShownTagLists() {
+    let shownTagLists = document.querySelectorAll('.imagetagger__tag-list--shown');
+
+    shownTagLists.forEach(tagList => {
+      tagList.classList.remove('imagetagger__tag-list--shown');
+    });
+  }
+
+  function showCurrentFileTagList(fileName) {
+    let currentFileTagList = document.querySelector(`.imagetagger__tag-list[data-filename="${fileName}"]`);
+    if (currentFileTagList)
+      currentFileTagList.classList.add('imagetagger__tag-list--shown');
+  }
+
+  function nextImage() {
+    if (imageIndex >= window.images.length - 1) {
+      imageIndex = 0;
+    } else {
+      imageIndex +=1;
+    }
+    imageElement.src = window.images[imageIndex];
+
+    hideAllShownTagLists();
+    showCurrentFileTagList(window.images[imageIndex]);
+  }
+
+  function previousImage() {
+    if (imageIndex <= 0) {
+      imageIndex = window.images.length - 1;
+    } else {
+      imageIndex -=1;
+    }
+    imageElement.src = window.images[imageIndex];
+
+    hideAllShownTagLists();
+    showCurrentFileTagList(window.images[imageIndex]);
+  }
+
+  function createTagListForFile(fileName) {
+    let fileTagList = document.createElement('div');
+    fileTagList.className = 'imagetagger__tag-list';
+    fileTagList.dataset.filename = fileName;
+
+    tagContainer.appendChild(fileTagList);
+
+    return fileTagList;
+  }
+
+  function appendTagToFile(fileName, tag) {
+    let fileTagList = tagContainer.querySelector(`.imagetagger__tag-list[data-filename="${fileName}"]`);
+
+    if (!fileTagList) {
+      fileTagList = createTagListForFile(fileName);
     }
 
+    fileTagList.classList.add('imagetagger__tag-list--shown');
 
-    imageElement.src = window.images[imageIndex];
+    let existingTag = fileTagList.querySelector(`span.imagetagger__tag-item[data-tag="${tag}"]`);
+    if (!existingTag) {
+      existingTag = document.createElement('span');
+      existingTag.className = 'imagetagger__tag-item';
+      existingTag.dataset.tag = tag;
+      existingTag.textContent = tag;
+
+      fileTagList.appendChild(existingTag);
+    }
+  }
+
+  function toggleTagInput() {
+    if (tagInput == document.activeElement) {
+      if (tagInput.value) {
+        appendTagToFile(window.images[imageIndex], tagInput.value);
+      }
+
+      tagInput.value = '';
+      tagInput.blur();
+    } else {
+      tagInput.focus();
+    }
+  }
+
+  document.body.addEventListener('keydown', (event) => {
+    if (event.key == "ArrowRight") {
+      nextImage();
+    } else if (event.key == "ArrowLeft") {
+      previousImage();
+    } else if (event.key == "Enter") {
+      toggleTagInput();
+    }
   })
 </script>
 </html>
